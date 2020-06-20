@@ -1,11 +1,7 @@
 ﻿/******************************************************************************/
 /*
-  Project - Unity CJ Lib
-            https://github.com/TheAllenChou/unity-cj-lib
-  
-  Author  - Ming-Lun "Allen" Chou
-  Web     - http://AllenChou.net
-  Twitter - @TheAllenChou
+  Based on CJ-Lib GPU Particle example
+  I'm just trying to prepare for the future work in Project Impetus
 */
 /******************************************************************************/
 
@@ -93,17 +89,19 @@ namespace GpuParticlesWithColliders
             int particleStride = sizeof(float) * 24;
             m_computeBuffer = new ComputeBuffer(kNumParticles, particleStride);
 
-            uint[] instanceArgs = new uint[] { 0, 0, 0, 0, 0 };
+            uint[] instanceArgs = new uint[] { 0, 0, 0, 0, 0 }; //5 indices: index count per instance, instance count, start index location, base vertex location, start instance location.
             m_instanceArgsBuffer = new ComputeBuffer(1, instanceArgs.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             instanceArgs[0] = (uint)m_mesh.GetIndexCount(0);
             instanceArgs[1] = (uint)kNumParticles;
             instanceArgs[2] = (uint)m_mesh.GetIndexStart(0);
-            instanceArgs[3] = (uint)m_mesh.GetBaseVertex(0);
+            instanceArgs[3] = (uint)m_mesh.GetBaseVertex(0); //start instance location is always 0
             m_instanceArgsBuffer.SetData(instanceArgs);
 
-            m_csInitKernelId = m_shader.FindKernel("Init");
-            m_csStepKernelId = m_shader.FindKernel("Step");
+            m_csInitKernelId = m_shader.FindKernel("Init");// Kernel used to initialize particle location. (in ParticleLogic.compute)
+            m_csStepKernelId = m_shader.FindKernel("Step");// Kernel used to update particles per frame
 
+            // We'll need ids to manage uniforms inside the shaders.
+            // Note how to get them... They share a global namespace! 
             m_csParticleBufferId = Shader.PropertyToID("particleBuffer");
             m_csScaleId = Shader.PropertyToID("scale");
             m_csSpeedId = Shader.PropertyToID("speed");
@@ -117,7 +115,7 @@ namespace GpuParticlesWithColliders
 
             m_materialProperties = new MaterialPropertyBlock();
 
-            InitParticles();
+            InitParticles(); // Init: Setup materials & shaders
         }
 
         void Update()
@@ -131,7 +129,7 @@ namespace GpuParticlesWithColliders
         void LateUpdate()
         {
             m_cSpherePrevPos = m_controlSphere.transform.position;
-            m_controlSphere.transform.localScale = new Vector3(1.5f * m_sphereRadius, 1.5f * m_sphereRadius, 1.5f * m_sphereRadius);
+            m_controlSphere.transform.localScale = new Vector3(2.0f * m_sphereRadius, 2.0f * m_sphereRadius, 2.0f * m_sphereRadius);
         }
         void OnDisable()
         {
@@ -148,53 +146,68 @@ namespace GpuParticlesWithColliders
             }
         }
 
+        // Set buffer to the graphic shader
         private void SetUpMaterial()
         {
-            m_material.enableInstancing = true;
-            m_material.SetBuffer(m_csParticleBufferId, m_computeBuffer);
+            m_material.enableInstancing = true; //Enable GPU instancing
+            m_material.SetBuffer(m_csParticleBufferId, m_computeBuffer); //We'll use pos in the compute buffer to render the particles
         }
 
+        // Give some random bounds to the compute shader. More importantly, set the buffer and particle count for it
         private void SetUpShader()
         {
-            m_shader.SetFloats(m_csScaleId, new float[] { 0.1f, 0.15f });
-            m_shader.SetFloats(m_csSpeedId, new float[] { 1.0f, 1.5f, 1.0f, 6.0f });
-            m_shader.SetFloats(m_csLifetimeId, new float[] { 0.1f, 3.0f, 3.0f, 0.1f });
+            m_shader.SetFloats(m_csScaleId, new float[] { 0.1f, 0.15f }); // scale controls the radius of the particles. (min,max)
+            m_shader.SetFloats(m_csSpeedId, new float[] { 1.0f, 1.5f, 1.0f, 6.0f }); // speed controls the (initial)speed limit. (min linear,max linear, min angular, max angular)
+            m_shader.SetFloats(m_csLifetimeId, new float[] { 0.1f, 3.0f, 3.0f, 0.1f }); // In this example particles have a random lifetimeBody and the fixed lifetime head/tail
+            // head is the time the particle grow to normal size, body is the time the particle fall and interact with the scene, tail is the time the particle shrink and decay
             m_shader.SetInt(m_csNumParticlesId, kNumParticles);
 
             m_shader.SetBuffer(m_csInitKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
+            // You'll need to set buffer for both kernels
         }
 
+        // Initialize Particles
         private void InitParticles()
         {
             SetUpMaterial();
             SetUpShader();
 
-            m_shader.Dispatch(m_csInitKernelId, kNumParticles, 1, 1);
+            m_shader.Dispatch(m_csInitKernelId, kNumParticles, 1, 1); // Run the init kernel, only once. The group count is ofcourse equal to the particle count
         }
 
+        // Update particle position, lifetime, dynamics. Also responsible in respawn particles (details in ParticleLogic.compute)
         private void UpdateParticles()
         {
+            // You need to set up all parameters for each dispatch call
             SetUpMaterial();
             SetUpShader();
 
+            // CPU knows time, now give it to GPU
             m_shader.SetFloats(m_csTimeId, new float[] { Time.time, m_timeScale * Time.fixedDeltaTime });
+            // Dynamic parameters can change(by the sliders), so update every frame.
             m_shader.SetFloats(m_csDynamics, new float[] { m_gravity, m_restitution, m_friction });
 
+            // Although we have only one control sphere, an array is still needed to paste the memory into GPU
             Vector4[] aSphere = new Vector4[1];
             Vector4[] cSphereVel = new Vector4[1];
+
             //m_cSpherePrevPos is updated in last lateUpdate;
-            aSphere[0] = m_controlSphere.transform.position; aSphere[0].w = m_sphereRadius;
-            m_cSphereVel = (m_controlSphere.transform.position - m_cSpherePrevPos) / Time.fixedDeltaTime;
+            aSphere[0] = m_controlSphere.transform.position; aSphere[0].w = m_sphereRadius; //aSphere stores the position and radius for the control sphere
+            m_cSphereVel = (m_controlSphere.transform.position - m_cSpherePrevPos) / Time.fixedDeltaTime; //Velocity can be calculated in CPU since we have only one control spehere. 
             cSphereVel[0] = m_cSphereVel;
+            // Pass those into GPU
             m_shader.SetVectorArray(m_csASphere, aSphere);
             m_shader.SetVectorArray(m_csASphereVel, cSphereVel);
 
-            Quaternion floorRot = Quaternion.AngleAxis(20.0f * m_floorTilt, Vector3.left);
+            // Update the floor
+            Quaternion floorRot = Quaternion.AngleAxis(20.0f * m_floorTilt, Vector3.left); //Floor rotation represented by Quaternion. Range +- 20 degree
+            // Visual change on CPU
             m_floor.transform.position = new Vector3(0.0f, m_floorHeight, 0.0f);
             m_floor.transform.rotation = floorRot;
+            //Physic change on GPU: The floor is assumed infinitely wide, represented as Ax + By + Cz + D.
             Vector3 floorNormal = floorRot * Vector3.up;
-            float floorD = -floorNormal.y * m_floorHeight;
+            float floorD = -floorNormal.y * m_floorHeight; // A,B,C is normal(x,y,z), calculate D.
             m_shader.SetVector(m_csPlane, new Vector4(floorNormal.x, floorNormal.y, floorNormal.z, floorD));
 
             m_shader.Dispatch(m_csStepKernelId, kNumParticles, 1, 1);
