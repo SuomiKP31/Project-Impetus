@@ -216,6 +216,8 @@ namespace GpuParticlesWithColliders
         private void RenderParticles()
         {
             Graphics.DrawMeshInstancedIndirect(m_mesh, 0, m_material, new Bounds(Vector3.zero, 20.0f * Vector3.one), m_instanceArgsBuffer, 0, m_materialProperties, UnityEngine.Rendering.ShadowCastingMode.On);
+            //                                 mesh, submeshindex, material, boudning volume, ArgBuffer,                           argOffset, material property,    shadowcasting
+            // Material Property: 
         }
     }
 }

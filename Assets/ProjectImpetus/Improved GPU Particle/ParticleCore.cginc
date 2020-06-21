@@ -60,8 +60,11 @@ v2f vert(appdata i)
     p.position 
     + scale * quat_rot(p.rotation, i.posOs.xyz);
 	// Why would we need to calculate a world space coord? 
-  o.posCs = UnityObjectToClipPos(posWs);
-  o.normWs = quat_rot(p.rotation, i.normOs);
+	// Because we're in the vertex shader now! We need to rotate the vertex around the particle. Note that posOs is the local coordinates of the vertex in particle instance.
+	// Formula: rotate vertex original position by given rotation param.Scale it towards the origin of the instance, eventually convert to world space by add the particle position.
+
+  o.posCs = UnityObjectToClipPos(posWs); // And ofcourse, project to clip space.
+  o.normWs = quat_rot(p.rotation, i.normOs); // Rotate the normal as supposed.
   o.color = p.color;
 
   return o;
@@ -77,6 +80,6 @@ fout frag(v2f i)
   o.c2.rgb = i.normWs;
   o.c2.a = 0.0;
   o.c3 = 0.3 * i.color;
-
+  // AutoLight.cginc does Blinn-Phong lighting for us.
   return o;
 }
