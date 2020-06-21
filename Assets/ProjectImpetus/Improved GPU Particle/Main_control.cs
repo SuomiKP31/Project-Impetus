@@ -160,7 +160,7 @@ namespace GpuParticlesWithColliders
         {
             m_shader.SetFloats(m_csScaleId, new float[] { 0.1f, 0.15f }); // scale controls the radius of the particles. (min,max)
             m_shader.SetFloats(m_csSpeedId, new float[] { 1.0f, 1.5f, 1.0f, 6.0f }); // speed controls the (initial)speed limit. (min linear,max linear, min angular, max angular)
-            m_shader.SetFloats(m_csLifetimeId, new float[] { 0.1f, 15.0f, 15.0f, 0.1f }); // In this example particles have a random lifetimeBody and the fixed lifetime head/tail
+            m_shader.SetFloats(m_csLifetimeId, new float[] { 0.1f, 5.0f, 5.0f, 0.1f }); // In this example particles have a random lifetimeBody and the fixed lifetime head/tail
             // head is the time the particle grow to normal size, body is the time the particle fall and interact with the scene, tail is the time the particle shrink and decay
             m_shader.SetInt(m_csNumParticlesId, kNumParticles);
             m_shader.SetFloat(m_csDamp, 1.02f);
