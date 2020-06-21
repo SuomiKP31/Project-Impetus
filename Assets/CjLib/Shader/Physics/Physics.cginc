@@ -23,6 +23,7 @@ struct CollisionResult
 {
   float3 position;
   float3 velocity;
+  float3 angularVelocity;
 };
 
 inline CollisionResult resolveCollision(float3 pos, float3 norm, float3 vel, float penetration, float restitution, float friction)
@@ -39,6 +40,19 @@ inline CollisionResult resolveCollision(float3 pos, float3 norm, float3 vel, flo
   return res;
 }
 
+inline CollisionResult resolveCollisionAngular(float3 pos, float3 norm, float3 vel, float3 avel, float penetration, float restitution, float friction)
+{
+  float d = dot(vel, norm);   // projected relative speed onto contact normal
+  float f = -d / length(vel); // ratio of relative speed along contact normal
+  float3 velN = d * norm;     // normal relative velocity
+  float3 velT = vel - velN;   // tangential relative velocity
+  float3 velResolution = -(1.0 + restitution) * velN - friction * f * velT;
+
+  CollisionResult res;
+  res.position = pos + penetration * norm;
+  res.velocity = vel + step(kEpsilon, penetration) * velResolution;
+  return res;
+}
 //-----------------------------------------------------------------------------
 // end: common
 
@@ -60,6 +74,12 @@ inline CollisionResult sphereVsPlane(float4 s, float4 plane, float3 vel, float r
   return resolveCollision(s.xyz, norm, vel, penetration, restitution, friction);
 }
 
+inline CollisionResult sphereVsPlaneAngular(float4 s, float4 plane, float3 vel, float3 avel, float restitution, float friction)
+{
+  float penetration = max(0.0, s.w - dot(float4(s.xyz, 1.0), plane));
+  float3 norm = plane.xyz;
+  return resolveCollisionAngular(s.xyz, norm, vel, avel, penetration, restitution, friction);
+}
 //-----------------------------------------------------------------------------
 // end: VS plane
 
@@ -84,7 +104,14 @@ inline CollisionResult sphereVsSphere(float4 s, float4 sphere, float3 vel, float
   float3 norm = centerDiff / centerDiffLen;
   return resolveCollision(s.xyz, norm, vel, penetration, restitution, friction);
 }
-
+inline CollisionResult sphereVsSphereAngular(float4 s, float4 sphere, float3 vel, float3 avel, float restitution, float friction)
+{
+  float3 centerDiff = s.xyz - sphere.xyz;
+  float centerDiffLen = length(centerDiff);
+  float penetration = max(0.0, s.w + sphere.w - centerDiffLen);
+  float3 norm = centerDiff / centerDiffLen;
+  return resolveCollisionAngular(s.xyz, norm, vel, avel, penetration, restitution, friction);
+}
 //-----------------------------------------------------------------------------
 // end: VS sphere
 

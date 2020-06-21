@@ -165,5 +165,15 @@ inline float4 nlerp(float4 a, float b, float t)
 {
   return normalize(lerp(a, b, t));
 }
+inline float4 quat_damp(float4 q, float damping)
+{
+// Gradually let the quat approach identity
+  float r = length(q.xyz);
+  if (r < kEpsilon)
+    return quat_identity();
 
+  q.w *= damping;
+
+  return normalize(q);
+}
 #endif

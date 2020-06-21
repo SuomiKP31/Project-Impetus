@@ -134,10 +134,14 @@ void Step(uint3 id : SV_DispatchThreadID)
 
   // integrate
   pos += vel * time.y;
-  float4 q = quat_pow(particleBuffer[id.x].angularVelocity, time.y);
+
+  // angular speed damping(damp the angle)
+  float4 dampedAngularSpeed = quat_damp(particleBuffer[id.x].angularVelocity,damping); // Do not direct multiply!
+  float4 q = quat_pow(dampedAngularSpeed, time.y);
   particleBuffer[id.x].rotation = quat_concat(q, particleBuffer[id.x].rotation);
 
   // write back
   particleBuffer[id.x].position = pos;
   particleBuffer[id.x].linearVelocity = vel;
+  particleBuffer[id.x].angularVelocity = dampedAngularSpeed;
 }
