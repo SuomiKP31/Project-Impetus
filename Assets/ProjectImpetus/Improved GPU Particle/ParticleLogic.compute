@@ -112,31 +112,30 @@ void Step(uint3 id : SV_DispatchThreadID)
   float r = 0.5f * particleBuffer[id.x].scale;
   float3 pos = particleBuffer[id.x].position;
   float3 vel = particleBuffer[id.x].linearVelocity;
-
+  float4 ang = particleBuffer[id.x].angularVelocity;
   // gravity
   vel.y -= dynamics.x * time.y;
 
   CollisionResult res;
 
-  // spheres
-  for (int i = 0; i < 3; ++i)
-  {
-    float3 velRel = vel - aSphereVel[i].xyz;
-    res = sphereVsSphere(float4(pos, r), aSphere[i], velRel, dynamics.y, dynamics.z);
+  // sphere
+
+    float3 velRel = vel - aSphereVel[0].xyz;
+    res = sphereVsSphereAngular(float4(pos, r), aSphere[0], velRel, ang, dynamics.y, dynamics.z);
     pos = res.position;
-    vel = res.velocity + aSphereVel[i].xyz;
-  }
+    vel = res.velocity + aSphereVel[0].xyz;
+	ang = res.angularVelocity;
 
   // plane
-  res = sphereVsPlane(float4(pos, r), plane, vel, dynamics.y, dynamics.z);
+  res = sphereVsPlaneAngular(float4(pos, r), plane, vel, ang, dynamics.y, dynamics.z);
   pos = res.position;
   vel = res.velocity;
-
+  ang = res.angularVelocity;
   // integrate
   pos += vel * time.y;
 
   // angular speed damping(damp the angle)
-  float4 dampedAngularSpeed = quat_damp(particleBuffer[id.x].angularVelocity,damping); // Do not direct multiply!
+  float4 dampedAngularSpeed = quat_damp(ang,damping); // Do not direct multiply!
   float4 q = quat_pow(dampedAngularSpeed, time.y);
   particleBuffer[id.x].rotation = quat_concat(q, particleBuffer[id.x].rotation);
 

@@ -163,7 +163,7 @@ namespace GpuParticlesWithColliders
             m_shader.SetFloats(m_csLifetimeId, new float[] { 0.1f, 15.0f, 15.0f, 0.1f }); // In this example particles have a random lifetimeBody and the fixed lifetime head/tail
             // head is the time the particle grow to normal size, body is the time the particle fall and interact with the scene, tail is the time the particle shrink and decay
             m_shader.SetInt(m_csNumParticlesId, kNumParticles);
-            m_shader.SetFloat(m_csDamp, 0.99f);
+            m_shader.SetFloat(m_csDamp, 1.02f);
 
             m_shader.SetBuffer(m_csInitKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
