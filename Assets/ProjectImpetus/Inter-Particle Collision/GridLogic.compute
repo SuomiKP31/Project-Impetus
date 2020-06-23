@@ -1,0 +1,60 @@
+﻿#pragma kernel LoadGrid
+#pragma kernel InitParIndex
+#pragma kernel AssignGrid
+#include "ParticleStruct.cginc"
+#include "GridStruct.cginc"
+
+RWStructuredBuffer<Particle> particleBuffer;
+RWStructuredBuffer<ParticleIndex> particleIndexBuffer;
+RWStructuredBuffer<Grid> gridBuffer;
+
+int numParticles; // index trick
+float3 gridLowCorner;
+float3 gridHighCorner;
+float gridSize;
+int3 gridDimension; 
+[numthreads(1,1,1)]
+void InitParIndex (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: dispatch for each particle.
+	// Calculate grid index for each particle.
+	ParticleIndex pidx;
+	float3 particleOffset = particleBuffer[id.x].position - gridLowCorner;
+	if(particleOffset.x < 0 || particleOffset.y < 0 || particleOffset.z < 0)
+	{
+	pidx.outBound = true;
+	}
+	if(particleBuffer[id.x].position.x > gridHighCorner.x || particleBuffer[id.x].position.y > gridHighCorner.y || particleBuffer[id.x].position.z > gridHighCorner.z)
+	{
+	pidx.outBound = true;
+	}
+	pidx.GridIndex.x = floor(particleOffset.x / gridSize);
+	pidx.GridIndex.y = floor(particleOffset.y / gridSize);
+	pidx.GridIndex.z = floor(particleOffset.z / gridSize);
+
+	//write back
+	particleIndexBuffer[id.x] = pidx;
+}
+
+
+[numthreads(1,1,1)]
+void LoadGrid (uint3 id : SV_DispatchThreadID)
+{
+    // Dispatch and initialize grids.
+	// idx = numParticles means this pass hasn't been written to
+	gridBuffer[id.x].PbIndex[0] = numParticles;
+	gridBuffer[id.x].PbIndex[1] = numParticles;
+	gridBuffer[id.x].PbIndex[2] = numParticles;
+	gridBuffer[id.x].PbIndex[3] = numParticles;
+}
+
+uint passNum; // Pass index. Each frame we should run this from 0 to 3.
+[numthreads(1,1,1)]
+void AssignGrid (uint3 id : SV_DispatchThreadID)
+{
+	// TODO: Read data from particleIndexBuffer and try write
+	// Must use atomic operations... Grids are shared by all threads.
+	// How exactly? Might need 4 passes. Rach time we only write one pass in the grid struct atomically.
+	// From the second pass on, check if the thread id is the same as the grid's previous passes. If same, return directly, otherwise write into the corresponding values.
+	// There could be overflows, like 5+ particles in a same grid, but according to GPU Gems 3.29 this will rarely happen so it's okay to ignore this condition. 
+}

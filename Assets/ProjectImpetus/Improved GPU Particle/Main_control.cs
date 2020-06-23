@@ -26,7 +26,7 @@ namespace GpuParticlesWithColliders
         [Range(5.0f, 20.0f)]
         public float m_gravity = 9.8f;
 
-        [Range(0.2f, 1.0f)]
+        [Range(0.1f, 1.0f)]
         public float m_sphereRadius = 0.8f;
 
         [Range(-0.1f, 0.1f)]

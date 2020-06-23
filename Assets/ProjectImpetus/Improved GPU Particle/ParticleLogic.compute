@@ -1,11 +1,6 @@
 ﻿/******************************************************************************/
 /*
-  Project - Unity CJ Lib
-  https://github.com/TheAllenChou/unity-cj-lib
-
-  Author  - Ming-Lun "Allen" Chou
-  Web     - http://AllenChou.net
-  Twitter - @TheAllenChou
+Improved Collision Detection with angular speed
 */
 /******************************************************************************/
 
@@ -68,8 +63,8 @@ void Init(uint3 id : SV_DispatchThreadID)
 
 float2 time; // (current, delta)
 float3 dynamics; // (gravity, restitution, friction)
-float4 aSphere[3];
-float4 aSphereVel[3];
+float4 aSphere[1];
+float4 aSphereVel[1];
 float4 plane;
 
 [numthreads(1, 1, 1)]
