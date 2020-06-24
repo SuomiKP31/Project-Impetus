@@ -54,7 +54,7 @@ namespace GpuParticlesWithColliders
 
         private GameObject m_floor;
 
-        private const int kNumParticles = 1000;
+        private const int kNumParticles = 10240;
 
         private ComputeBuffer m_computeBuffer;
         private ComputeBuffer m_instanceArgsBuffer;

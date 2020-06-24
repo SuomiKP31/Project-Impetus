@@ -16,7 +16,6 @@ int3 gridDimension;
 [numthreads(1,1,1)]
 void InitParIndex (uint3 id : SV_DispatchThreadID)
 {
-    // TODO: dispatch for each particle.
 	// Calculate grid index for each particle.
 	ParticleIndex pidx;
 	float3 particleOffset = particleBuffer[id.x].position - gridLowCorner;
