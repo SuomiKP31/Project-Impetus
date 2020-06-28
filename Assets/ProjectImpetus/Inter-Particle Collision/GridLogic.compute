@@ -5,7 +5,6 @@
 #include "GridStruct.cginc"
 
 RWStructuredBuffer<Particle> particleBuffer;
-RWStructuredBuffer<ParticleIndex> particleIndexBuffer;
 RWStructuredBuffer<Grid> gridBuffer;
 
 int numParticles; // index trick
@@ -17,22 +16,26 @@ int3 gridDimension;
 void InitParIndex (uint3 id : SV_DispatchThreadID)
 {
 	// Calculate grid index for each particle.
-	ParticleIndex pidx;
+	uint3 pidx;
+	int x,y,z;
 	float3 particleOffset = particleBuffer[id.x].position - gridLowCorner;
-	if(particleOffset.x < 0 || particleOffset.y < 0 || particleOffset.z < 0)
-	{
-	pidx.outBound = true;
-	}
-	if(particleBuffer[id.x].position.x > gridHighCorner.x || particleBuffer[id.x].position.y > gridHighCorner.y || particleBuffer[id.x].position.z > gridHighCorner.z)
-	{
-	pidx.outBound = true;
-	}
-	pidx.GridIndex.x = floor(particleOffset.x / gridSize);
-	pidx.GridIndex.y = floor(particleOffset.y / gridSize);
-	pidx.GridIndex.z = floor(particleOffset.z / gridSize);
+	x = floor(particleOffset.x / gridSize);
+	y = floor(particleOffset.y / gridSize);
+	z = floor(particleOffset.z / gridSize);
+	//outbound handle
+	if(x < 0){ x = 0;}
+	if(y < 0){ y = 0;}
+	if(z < 0){ z = 0;}
 
+	if(x > gridDimension.x) {x = gridDimension.x;}
+	if(y > gridDimension.y) {y = gridDimension.y;}
+	if(z > gridDimension.z) {z = gridDimension.z;}
 	//write back
-	particleIndexBuffer[id.x] = pidx;
+	pidx.x = x;
+	pidx.y = y;
+	pidx.z = z;
+	particleBuffer[id.x].gridIndex = pidx;
+	//particleIndexBuffer[id.x] = pidx;
 }
 
 

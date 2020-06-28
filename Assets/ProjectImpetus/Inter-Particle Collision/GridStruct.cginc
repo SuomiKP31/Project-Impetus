@@ -13,7 +13,7 @@ struct Grid
 
 	uint4 PbIndex; 
 };
-
+/*
 struct ParticleIndex
 {
 	// Grid index will not change within frame. So we only calculate it once.
@@ -21,4 +21,5 @@ struct ParticleIndex
 	uint3 GridIndex;
 	bool outBound;
 };
+*/
 #endif

@@ -54,7 +54,7 @@ namespace GpuParticlesWithColliders
 
         private GameObject m_floor;
 
-        private const int kNumParticles = 10240;
+        private const int kNumParticles = 1024;
 
         private ComputeBuffer m_computeBuffer;
         private ComputeBuffer m_instanceArgsBuffer;
@@ -182,9 +182,8 @@ namespace GpuParticlesWithColliders
         // Update particle position, lifetime, dynamics. Also responsible in respawn particles (details in ParticleLogic.compute)
         private void UpdateParticles()
         {
-            // You need to set up all parameters for each dispatch call
-            SetUpMaterial();
-            SetUpShader();
+            //SetUpMaterial();
+            //SetUpShader();
 
             // CPU knows time, now give it to GPU
             m_shader.SetFloats(m_csTimeId, new float[] { Time.time, m_timeScale * Time.fixedDeltaTime });
@@ -210,9 +209,8 @@ namespace GpuParticlesWithColliders
             m_floor.transform.rotation = floorRot;
             //Physic change on GPU: The floor is assumed infinitely wide, represented as Ax + By + Cz + D.
             Vector3 floorNormal = floorRot * Vector3.up;
-            float floorD = -floorNormal.y * m_floorHeight; // A,B,C is normal(x,y,z), calculate D.
+            float floorD = -floorNormal.y * m_floorHeight; // A,B,C is normal(x,y,z), calculate D. Note that y axis is the up-down axis.
             m_shader.SetVector(m_csPlane, new Vector4(floorNormal.x, floorNormal.y, floorNormal.z, floorD));
-
             m_shader.Dispatch(m_csStepKernelId, kNumParticles, 1, 1);
         }
 

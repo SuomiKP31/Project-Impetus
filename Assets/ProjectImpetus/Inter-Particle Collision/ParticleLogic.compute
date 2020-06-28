@@ -28,6 +28,41 @@ int numParticles;
 void Init(uint3 id : SV_DispatchThreadID)
 {
   // TODO: init particles at random locations INSIDE the bound
+	float3 seed = id.x;
+	seed = rand_vec(seed);
+
+  // Particle Position/Orientation/Scale
+	float3 randpos;
+	randpos.x = rand_range(seed.x,gridLowCorner.x + 0.1,gridHighCorner.x - 0.1);
+	randpos.y = rand_range(seed.y,gridLowCorner.y + 0.1,gridHighCorner.y - 0.1);
+	randpos.z = rand_range(seed.z,gridLowCorner.z + 0.1,gridHighCorner.z - 0.1);
+	particleBuffer[id.x].position = randpos;
+
+	float3 rotationAxis = rand_uvec(seed);
+	seed = rand_vec(seed);
+	float rotationAngle = rand(seed.x) * kPi;
+	seed = rand_vec(seed);
+	particleBuffer[id.x].rotation = quat_axis_angle(rotationAxis, rotationAngle);
+
+	particleBuffer[id.x].scale = rand_range(seed.x, scale.x, scale.y);
+	seed = rand_vec(seed);
+	// Linear Velocity
+	float3 linearDirection = normalize(rand_vec(seed));
+	seed = rand_vec(seed);
+	float linearSpeed = rand_range(seed.x, speed.x, speed.y);
+	seed = rand_vec(seed);
+	particleBuffer[id.x].linearVelocity = linearSpeed * linearDirection;
+
+  // Angular Velocity
+    particleBuffer[id.x].damping = damping;
+	float3 angularDirection = rand_uvec(seed);
+	seed = rand_vec(seed);
+	float angularSpeed = rand_range(seed.x, speed.z, speed.w);
+	seed = rand_vec(seed);
+	particleBuffer[id.x].angularVelocity = quat_axis_angle(angularDirection, angularSpeed);
+
+	float t = rand_range(seed.x,0,1.0);
+	particleBuffer[id.x].color = float4(hsv2rgb(float3(t, 1.0, 1.0)), 1.0);
 }
 
 float2 time; // (current, delta)
@@ -50,15 +85,21 @@ void Step(uint3 id : SV_DispatchThreadID)
 //-------------------------------------- TODO PART --------------------------------
   CollisionResult res;
 
-  // sphere
+	// sphere
     float3 velRel = vel - aSphereVel[0].xyz;
     res = sphereVsSphereAngular(float4(pos, r), aSphere[0], velRel, ang, dynamics.y, dynamics.z);
     pos = res.position;
     vel = res.velocity + aSphereVel[0].xyz;
 	ang = res.angularVelocity;
 
-  // TODO: collision with all planes
-
+	// TODO: collision with all planes
+	for (int i = 0; i < 6; i++)
+	{
+	res = sphereVsPlaneAngular(float4(pos, r), plane[i], vel, ang, dynamics.y, dynamics.z);
+	pos = res.position;
+	vel = res.velocity;
+	ang = res.angularVelocity;
+	}
 
 	// TODO: collision with surrounding grids
 

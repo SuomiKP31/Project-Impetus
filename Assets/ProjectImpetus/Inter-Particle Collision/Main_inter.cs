@@ -40,17 +40,18 @@ namespace GpuParticlesWithColliders
 
         private const int kNumParticles = 1000;
         private const float minParticleScale = 0.2f; // Grid edge length should be the diameter of the smallest particle, so that there won't be more than 4 particles in each grid.
-        private const float maxParticleScale = 0.4f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
+        private const float maxParticleScale = 0.25f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
 
         //Constraints and grid related variables
-        private int[] m_gridDimension = { 20, 20, 20 }; // I think it's ok to set three dimensions to a same number, but for flexibility...
-        private float[] m_constraint = new float[24];
+        private int[] m_gridDimension = { 50, 50, 50 }; // I think it's ok to set three dimensions to a same number, but for flexibility...
+        private Vector4[] m_constraint = new Vector4[6]; // Ceiling, right, forward, left, back, floor.
         private Vector3 m_gridLowCorner;
         private Vector3 m_gridHighCorner;
+        private Vector3 m_gridCenter = new Vector3(0,0,0);
 
         private ComputeBuffer m_computeBuffer; // Used to store particle struct
         private ComputeBuffer m_gridBuffer; // Used to store grid information. Should reset each frame.
-        private ComputeBuffer m_particleIndexBuffer; // Used to store particles' index in the grid temporarily. Should reset each frame.
+        //private ComputeBuffer m_particleIndexBuffer; // Used to store particles' index in the grid temporarily. Should reset each frame.
         private ComputeBuffer m_instanceArgsBuffer;
 
         private int m_csInitKernelId;
@@ -86,13 +87,15 @@ namespace GpuParticlesWithColliders
         void OnEnable()
         {
             m_mesh = new Mesh();
-            m_mesh = PrimitiveMeshFactory.BoxFlatShaded();
+            m_mesh = PrimitiveMeshFactory.SphereWireframe(20,20);
 
             m_controlSphere = Instantiate(m_controlSpherePrefab);
             m_cSpherePrevPos = Vector3.zero;
 
-            int particleStride = sizeof(float) * 24;
+            int particleStride = sizeof(float) * 20 + sizeof(uint) * 3;
             m_computeBuffer = new ComputeBuffer(kNumParticles, particleStride);
+            int gridSize = m_gridDimension[0] * m_gridDimension[1] * m_gridDimension[2];
+            m_gridBuffer = new ComputeBuffer(gridSize, sizeof(uint) * 4);
 
             uint[] instanceArgs = new uint[] { 0, 0, 0, 0, 0 }; //5 indices: index count per instance, instance count, start index location, base vertex location, start instance location.
             m_instanceArgsBuffer = new ComputeBuffer(1, instanceArgs.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
@@ -107,7 +110,7 @@ namespace GpuParticlesWithColliders
 
             m_gsLoadGridKernelId = m_gridShader.FindKernel("LoadGrid");
             m_gsInitParIndexKernelId = m_gridShader.FindKernel("InitParIndex");
-            m_gsAssignGridKernelId = m_gridShader.FindKernel("AssigenGrid");
+            m_gsAssignGridKernelId = m_gridShader.FindKernel("AssignGrid");
 
             // We'll need ids to manage uniforms inside the shaders.
             // Note how to get them... They share a global namespace! 
@@ -120,7 +123,7 @@ namespace GpuParticlesWithColliders
             m_csDynamicsId = Shader.PropertyToID("dynamics");
             m_csASphereId = Shader.PropertyToID("aSphere");
             m_csASphereVelId = Shader.PropertyToID("aSphereVel");
-            m_csWallGroupId = Shader.PropertyToID("walls");
+            m_csWallGroupId = Shader.PropertyToID("plane");
             m_csDampId = Shader.PropertyToID("damping");
 
             m_gsGridDimensionId = Shader.PropertyToID("gridDimension");
@@ -132,16 +135,14 @@ namespace GpuParticlesWithColliders
 
             InitConstraints(); //Setup grid corners and walls. Store them inside member variables for easy pass later.
             InitParticles(); // Init: Setup materials & shaders
-            GenerateGrid(); // Generate grids for the first frame.
         }
 
         void Update()
         {
             if (!isActiveAndEnabled)
                 return;
-
-            UpdateParticles(); // Update position, rotation, etc.
             GenerateGrid(); // Generate grid for next frame
+            UpdateParticles(); // Update position, rotation, etc.
             RenderParticles();
         }
         void LateUpdate()
@@ -186,6 +187,9 @@ namespace GpuParticlesWithColliders
             m_shader.SetFloat(m_csDampId, 1.02f); // The damping factor should be larger than 1, why?
             //It's more efficient to do multiplying (than dividing) on GPU so I used a intuitive brute force approach in quat_damp. I directly multiply q.w (the real part of the quaternion) and then normalize it, that damps the 
             // quaternion for a little bit.
+            m_shader.SetVector(m_gsLowCornerId, m_gridLowCorner);
+            m_shader.SetVector(m_gsHighCornerId, m_gridHighCorner);
+            m_shader.SetVectorArray(m_csWallGroupId,m_constraint);
 
             m_shader.SetBuffer(m_csInitKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
@@ -198,28 +202,80 @@ namespace GpuParticlesWithColliders
 
         void InitParticles()
         {
-            throw new NotImplementedException();
+            // TODO
+            SetUpMaterial();
+            SetUpShader();
+
+            m_shader.Dispatch(m_csInitKernelId, kNumParticles, 1, 1);
         }
         void InitConstraints()
         {
-            // In this code you initialize floor, ceiling and walls.
-
+            // In this code you initialize floor, ceiling and walls.Please note that y is the up axis, not z.
+            Vector3 gridCubeSize;
+            gridCubeSize.x = m_gridDimension[0] * minParticleScale;
+            gridCubeSize.y = m_gridDimension[1] * minParticleScale;
+            gridCubeSize.z = m_gridDimension[2] * minParticleScale;
+            m_gridLowCorner = new Vector3(-0.5f * gridCubeSize.x, -0.5f * gridCubeSize.y, -0.5f * gridCubeSize.z);
+            m_gridLowCorner += m_gridCenter;
+            m_gridHighCorner = new Vector3(0.5f * gridCubeSize.x, 0.5f * gridCubeSize.y, 0.5f * gridCubeSize.z);
+            m_gridHighCorner += m_gridCenter;
+            //Ceiling
+            Vector3 refCeiling = new Vector3(0f, m_gridHighCorner.y, 0f);
+            calculateD(ref m_constraint[0], Vector3.down, refCeiling);
+            //Right Wall
+            Vector3 refRight = new Vector3(m_gridHighCorner.x, 0f , 0f);
+            calculateD(ref m_constraint[1], Vector3.left, refRight);
+            //Forward Wall
+            Vector3 refForward = new Vector3(0f, 0f, m_gridHighCorner.z);
+            calculateD(ref m_constraint[2], Vector3.back, refForward);
+            // Left Wall
+            Vector3 refLeft = new Vector3(m_gridLowCorner.x, 0f, 0f);
+            calculateD(ref m_constraint[3], Vector3.right, refLeft);
+            // Back Wall
+            Vector3 refBack = new Vector3(0f, 0f, m_gridLowCorner.z);
+            calculateD(ref m_constraint[4], Vector3.forward, refBack);
+            // Floor
+            Vector3 refFloor = new Vector3(0f, m_gridLowCorner.y, 0f);
+            calculateD(ref m_constraint[5], Vector3.up, refFloor);
             
-
-            // TODO
             // calculate 4 parameters normal(A,B,C) and D for ceiling, 4 walls and floor. You must make sure the consistency between this function and GenerateGrid()
         }
         void UpdateParticles()
         {
-            throw new NotImplementedException();
+            // TODO
+            // CPU knows time, now give it to GPU
+            m_shader.SetFloats(m_csTimeId, new float[] { Time.time, m_timeScale * Time.fixedDeltaTime });
+            // Dynamic parameters can change(by the sliders), so update every frame.
+            m_shader.SetFloats(m_csDynamicsId, new float[] { m_gravity, m_restitution, m_friction });
+
+            // Although we have only one control sphere, an array is still needed to paste the memory into GPU
+            Vector4[] aSphere = new Vector4[1];
+            Vector4[] cSphereVel = new Vector4[1];
+
+            //m_cSpherePrevPos is updated in last lateUpdate;
+            aSphere[0] = m_controlSphere.transform.position; aSphere[0].w = m_sphereRadius; //aSphere stores the position and radius for the control sphere
+            m_cSphereVel = (m_controlSphere.transform.position - m_cSpherePrevPos) / Time.fixedDeltaTime; //Velocity can be calculated in CPU since we have only one control spehere. 
+            cSphereVel[0] = m_cSphereVel;
+            // Pass those into GPU
+            m_shader.SetVectorArray(m_csASphereId, aSphere);
+            m_shader.SetVectorArray(m_csASphereVelId, cSphereVel);
+            m_shader.Dispatch(m_csStepKernelId, kNumParticles, 1, 1);
         }
 
         void RenderParticles() {
-            throw new NotImplementedException();
+            Graphics.DrawMeshInstancedIndirect(m_mesh, 0, m_material, new Bounds(Vector3.zero, 20.0f * Vector3.one), m_instanceArgsBuffer, 0, m_materialProperties, UnityEngine.Rendering.ShadowCastingMode.On);
         }
         void GenerateGrid()
         {
-            throw new NotImplementedException();
+            // TODO
+        }
+        void calculateD(ref Vector4 floor, Vector3 normal, Vector3 refpoint)
+        {
+            //calculate params for plane. normal must be normalized. refpoint is any point on the plane.
+            floor.x = normal.x;
+            floor.y = normal.y;
+            floor.z = normal.z;
+            floor.w = -Vector3.Dot(normal, refpoint); // D = -(Ax+By+Cz)
         }
     }
 }

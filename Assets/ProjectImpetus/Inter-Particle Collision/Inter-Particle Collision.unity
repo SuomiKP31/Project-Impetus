@@ -130,7 +130,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1059523895}
-  - component: {fileID: 1059523894}
+  - component: {fileID: 1059523896}
   m_Layer: 0
   m_Name: Main
   m_TagString: Untagged
@@ -138,32 +138,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1059523894
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1059523893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c2257a2fa23f40468d49aa8c8a1685d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_shader: {fileID: 7200000, guid: 5f8891cd3f29e7f4f93b16b63c81d2d1, type: 3}
-  m_material: {fileID: 2100000, guid: bd952a39a157d274a86e5e6038ffe168, type: 2}
-  m_timeScale: 1
-  m_gravity: 9.8
-  m_sphereRadius: 0.8
-  m_sphereSpeed: 0.05
-  m_floorTilt: 0
-  m_floorHeight: -2
-  m_restitution: 0.3
-  m_friction: 0.7
-  m_floorPrefab: {fileID: 1113924760286158, guid: 9db541cf921ef0c46a56d8e3a3194392,
-    type: 3}
-  m_controlSpherePrefab: {fileID: 7828119654002003673, guid: 1db6b9e958530524f829e9189e950cde,
-    type: 3}
 --- !u!4 &1059523895
 Transform:
   m_ObjectHideFlags: 0
@@ -178,6 +152,30 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1059523896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059523893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee9379eb9c8389448b4b5d8bf5c7daf2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_shader: {fileID: 7200000, guid: 20de3aa05eea58645881e219db7549cb, type: 3}
+  m_gridShader: {fileID: 7200000, guid: e563d3339f055044e849268020c3533e, type: 3}
+  m_material: {fileID: 2100000, guid: 9a37816f150e5b74eaa1e1562057cfdc, type: 2}
+  m_timeScale: 1
+  m_gravity: 9.8
+  m_sphereRadius: 0.8
+  m_restitution: 0.3
+  m_friction: 0.7
+  m_controlSpherePrefab: {fileID: 7828119654002003673, guid: 1db6b9e958530524f829e9189e950cde,
+    type: 3}
+  m_floorPrefab: {fileID: 0}
+  m_wallPrefab: {fileID: 0}
 --- !u!1 &1558534344
 GameObject:
   m_ObjectHideFlags: 0

@@ -24,9 +24,9 @@ struct Particle
 
   float4 angularVelocity;
 
-  float4 lifetime; // (head, body, tail, current)
 
   float4 color;
+  uint3 gridIndex;
 };
 
 #endif
