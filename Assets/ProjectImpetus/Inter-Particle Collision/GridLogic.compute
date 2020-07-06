@@ -59,4 +59,5 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 	// How exactly? Might need 4 passes. Rach time we only write one pass in the grid struct atomically.
 	// From the second pass on, check if the thread id is the same as the grid's previous passes. If same, return directly, otherwise write into the corresponding values.
 	// There could be overflows, like 5+ particles in a same grid, but according to GPU Gems 3.29 this will rarely happen so it's okay to ignore this condition. 
+	
 }

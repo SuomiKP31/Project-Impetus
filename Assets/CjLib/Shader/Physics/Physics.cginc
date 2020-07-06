@@ -54,21 +54,20 @@ inline CollisionResult resolveCollisionAngular(float4 pos, float3 norm, float3 v
   float3 torque = cross(frictionVel,relativePos); // We don't work with mass so use frictionVel to represent the friction force.
   float4 angResolution = quat_axis_angle(torque,length(torque)); //torque is the axis. Angle represents how much the particle will turn each tick in radians.
   
-  if (torque.x * torque.x + torque.y * torque.y + torque.z * torque.z <= 0.01)
-    angResolution = (0,0,0,1);
-
-  if(step(kEpsilon, penetration))
-  {
-  angResolution = slerp(avel,angResolution,0.8);
-  //angResolution = avel;
-  }
-  else
-  {
-  angResolution = avel;
+  if (step(kEpsilon, penetration)) {
+    angResolution = slerp(avel,angResolution, 0.8);
+    // if (length(angResolution < 0.00001))
+    //   angResolution = (0,0,0,0);
+  } else {
+    angResolution = avel;
   }
   CollisionResult res;
   res.position = pos.xyz + penetration * norm;
   res.velocity = vel + step(kEpsilon, penetration) * velResolution;
+  
+  //if (length(vel) < 0.3 && step(kEpsilon, penetration))
+  //  res.velocity = (0,0,0);
+  
   res.angularVelocity = angResolution;
   return res;
 }

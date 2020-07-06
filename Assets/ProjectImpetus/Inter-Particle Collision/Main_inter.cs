@@ -38,12 +38,12 @@ namespace GpuParticlesWithColliders
         // Wall prefab - Invisible wall around the scene. It should be used to constraint the particles, so that they won't go out of our grid box.
         public GameObject m_wallPrefab;
 
-        private const int kNumParticles = 1000;
+        private const int kNumParticles = 1200;
         private const float minParticleScale = 0.2f; // Grid edge length should be the diameter of the smallest particle, so that there won't be more than 4 particles in each grid.
         private const float maxParticleScale = 0.25f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
 
         //Constraints and grid related variables
-        private int[] m_gridDimension = { 50, 50, 50 }; // I think it's ok to set three dimensions to a same number, but for flexibility...
+        private int[] m_gridDimension = { 40, 40, 40 }; // I think it's ok to set three dimensions to a same number, but for flexibility...
         private Vector4[] m_constraint = new Vector4[6]; // Ceiling, right, forward, left, back, floor.
         private Vector3 m_gridLowCorner;
         private Vector3 m_gridHighCorner;
@@ -268,6 +268,14 @@ namespace GpuParticlesWithColliders
         void GenerateGrid()
         {
             // TODO
+            int gridSize = m_gridDimension[0] * m_gridDimension[1] * m_gridDimension[2];
+
+            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csGridBufferId, m_gridBuffer);
+            
+            m_gridShader.Dispatch(m_gsLoadGridKernelId, gridSize, 1, 1);
+            m_gridShader.Dispatch(m_gsAssignGridKernelId, kNumParticles, 1, 1);
+
         }
         void calculateD(ref Vector4 floor, Vector3 normal, Vector3 refpoint)
         {
