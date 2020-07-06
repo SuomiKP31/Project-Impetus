@@ -39,15 +39,20 @@ void InitParIndex (uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(1,1,1)]
-void LoadGrid (uint3 id : SV_DispatchThreadID)
+[numthreads(64,1,1)]
+void LoadGrid (uint3 g_id : SV_GroupID, uint3 id : SV_GroupThreadID)
 {
     // Dispatch and initialize grids.
 	// idx = numParticles means this pass hasn't been written to
-	gridBuffer[id.x].PbIndex[0] = numParticles;
+	gridBuffer[g_id.x * 64 * 64 + g_id.y * 64 + id.x].PbIndex[0] = numParticles;
+	gridBuffer[g_id.x * 64 * 64 + g_id.y * 64 + id.x].PbIndex[1] = numParticles;
+	gridBuffer[g_id.x * 64 * 64 + g_id.y * 64 + id.x].PbIndex[2] = numParticles;
+	gridBuffer[g_id.x * 64 * 64 + g_id.y * 64 + id.x].PbIndex[3] = numParticles;
+	//gridBuffer[id.x].PbIndex[0] = groupThreadID.x;
+	/*gridBuffer[id.x].PbIndex[0] = numParticles;
 	gridBuffer[id.x].PbIndex[1] = numParticles;
 	gridBuffer[id.x].PbIndex[2] = numParticles;
-	gridBuffer[id.x].PbIndex[3] = numParticles;
+	gridBuffer[id.x].PbIndex[3] = numParticles;*/
 }
 
 uint passNum; // Pass index. Each frame we should run this from 0 to 3.
@@ -60,4 +65,46 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 	// From the second pass on, check if the thread id is the same as the grid's previous passes. If same, return directly, otherwise write into the corresponding values.
 	// There could be overflows, like 5+ particles in a same grid, but according to GPU Gems 3.29 this will rarely happen so it's okay to ignore this condition. 
 	
+	uint grid_x = particleBuffer[id.x].gridIndex.x;
+	uint grid_y = particleBuffer[id.x].gridIndex.y;
+	uint grid_z = particleBuffer[id.x].gridIndex.z;
+
+	uint grid_idx = 50 * 50 * grid_x + 50 * grid_y + grid_z;
+
+	if (gridBuffer[grid_idx].PbIndex[0] == numParticles) {
+		gridBuffer[grid_idx].PbIndex[0] = id.x;
+		return;
+	}
+	else {
+		if (gridBuffer[grid_idx].PbIndex[0] == id.x)
+			return;
+	}
+
+	if (gridBuffer[grid_idx].PbIndex[1] == numParticles) {
+		gridBuffer[grid_idx].PbIndex[1] = id.x;
+		return;
+	}
+	else {
+		if (gridBuffer[grid_idx].PbIndex[1] == id.x)
+			return;
+	}
+
+	if (gridBuffer[grid_idx].PbIndex[2] == numParticles) {
+		gridBuffer[grid_idx].PbIndex[2] = id.x;
+		return;
+	}
+	else {
+		if (gridBuffer[grid_idx].PbIndex[2] == id.x)
+			return;
+	}
+
+	if (gridBuffer[grid_idx].PbIndex[3] == numParticles) {
+		gridBuffer[grid_idx].PbIndex[3] = id.x;
+		return;
+	}
+	else {
+		if (gridBuffer[grid_idx].PbIndex[3] == id.x)
+			return;
+	}
+
 }

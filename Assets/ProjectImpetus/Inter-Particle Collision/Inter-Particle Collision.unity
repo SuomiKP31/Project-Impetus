@@ -167,7 +167,7 @@ MonoBehaviour:
   m_shader: {fileID: 7200000, guid: 20de3aa05eea58645881e219db7549cb, type: 3}
   m_gridShader: {fileID: 7200000, guid: e563d3339f055044e849268020c3533e, type: 3}
   m_material: {fileID: 2100000, guid: 9a37816f150e5b74eaa1e1562057cfdc, type: 2}
-  m_timeScale: 1
+  m_timeScale: 0.5
   m_gravity: 9.8
   m_sphereRadius: 0.8
   m_restitution: 0.3

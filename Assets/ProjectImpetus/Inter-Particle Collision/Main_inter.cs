@@ -7,7 +7,7 @@ namespace GpuParticlesWithColliders
     public class Main_inter : MonoBehaviour
     {
         //------------------------------- Property Block ---------------------------------------//
-
+        public const int dim = 64;
         public ComputeShader m_shader; // Probably only one shader is needed for init/step
         public ComputeShader m_gridShader; // Another used to generate grids and update them for each frame.
         public Material m_material; // Material which attached by the shader we use for rendering.
@@ -38,12 +38,13 @@ namespace GpuParticlesWithColliders
         // Wall prefab - Invisible wall around the scene. It should be used to constraint the particles, so that they won't go out of our grid box.
         public GameObject m_wallPrefab;
 
-        private const int kNumParticles = 1200;
+        private const int kNumParticles = 2000;
         private const float minParticleScale = 0.2f; // Grid edge length should be the diameter of the smallest particle, so that there won't be more than 4 particles in each grid.
         private const float maxParticleScale = 0.25f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
 
         //Constraints and grid related variables
-        private int[] m_gridDimension = { 40, 40, 40 }; // I think it's ok to set three dimensions to a same number, but for flexibility...
+
+        private int[] m_gridDimension = { dim, dim, dim }; // I think it's ok to set three dimensions to a same number, but for flexibility...
         private Vector4[] m_constraint = new Vector4[6]; // Ceiling, right, forward, left, back, floor.
         private Vector3 m_gridLowCorner;
         private Vector3 m_gridHighCorner;
@@ -194,8 +195,10 @@ namespace GpuParticlesWithColliders
             m_shader.SetBuffer(m_csInitKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csGridBufferId, m_gridBuffer);
+
             m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csParticleBufferId, m_computeBuffer);
             m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csGridBufferId,m_gridBuffer);
+            m_gridShader.SetInt(m_csNumParticlesId, kNumParticles);
             // You'll need to set buffer for all kernels (Init kernel does not need grid though)
         }
 
@@ -268,13 +271,29 @@ namespace GpuParticlesWithColliders
         void GenerateGrid()
         {
             // TODO
-            int gridSize = m_gridDimension[0] * m_gridDimension[1] * m_gridDimension[2];
-
-            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csParticleBufferId, m_computeBuffer);
             m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csGridBufferId, m_gridBuffer);
-            
-            m_gridShader.Dispatch(m_gsLoadGridKernelId, gridSize, 1, 1);
+            m_gridShader.Dispatch(m_gsLoadGridKernelId, dim, dim, 1);
+
+            m_gridShader.SetBuffer(m_gsInitParIndexKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.Dispatch(m_gsInitParIndexKernelId, kNumParticles, 1, 1);
+
+            m_gridShader.SetBuffer(m_gsAssignGridKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.SetBuffer(m_gsAssignGridKernelId, m_csGridBufferId, m_gridBuffer);
             m_gridShader.Dispatch(m_gsAssignGridKernelId, kNumParticles, 1, 1);
+
+            //
+            // For Debug
+            //
+            /*uint[] res;
+            res = new uint[64*64*64 * 4];
+            //res = new uint[40*40*40 * 4];
+            m_gridBuffer.GetData(res);
+
+            uint sum = 0;
+            for (int i = 0; i < 64 * 64 * 64 * 4; ++i)
+                sum += res[i];
+            Debug.Log(res[234]);*/
+            //Debug.Log(sum - 64*64*64*4*1200);
 
         }
         void calculateD(ref Vector4 floor, Vector3 normal, Vector3 refpoint)
