@@ -65,46 +65,44 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 	// From the second pass on, check if the thread id is the same as the grid's previous passes. If same, return directly, otherwise write into the corresponding values.
 	// There could be overflows, like 5+ particles in a same grid, but according to GPU Gems 3.29 this will rarely happen so it's okay to ignore this condition. 
 	
+
+
+
 	uint grid_x = particleBuffer[id.x].gridIndex.x;
 	uint grid_y = particleBuffer[id.x].gridIndex.y;
 	uint grid_z = particleBuffer[id.x].gridIndex.z;
 
-	uint grid_idx = 50 * 50 * grid_x + 50 * grid_y + grid_z;
+	uint grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
 
+	
 	if (gridBuffer[grid_idx].PbIndex[0] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[0] = id.x;
 		return;
 	}
-	else {
-		if (gridBuffer[grid_idx].PbIndex[0] == id.x)
-			return;
-	}
+	
+
 
 	if (gridBuffer[grid_idx].PbIndex[1] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[1] = id.x;
 		return;
 	}
-	else {
-		if (gridBuffer[grid_idx].PbIndex[1] == id.x)
-			return;
-	}
+	
 
+	
 	if (gridBuffer[grid_idx].PbIndex[2] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[2] = id.x;
 		return;
 	}
-	else {
-		if (gridBuffer[grid_idx].PbIndex[2] == id.x)
-			return;
-	}
+	
 
+	
 	if (gridBuffer[grid_idx].PbIndex[3] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[3] = id.x;
 		return;
 	}
-	else {
-		if (gridBuffer[grid_idx].PbIndex[3] == id.x)
-			return;
-	}
+	
+
+
+	
 
 }

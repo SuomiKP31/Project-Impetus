@@ -38,7 +38,7 @@ namespace GpuParticlesWithColliders
         // Wall prefab - Invisible wall around the scene. It should be used to constraint the particles, so that they won't go out of our grid box.
         public GameObject m_wallPrefab;
 
-        private const int kNumParticles = 2000;
+        private const int kNumParticles = 400;
         private const float minParticleScale = 0.2f; // Grid edge length should be the diameter of the smallest particle, so that there won't be more than 4 particles in each grid.
         private const float maxParticleScale = 0.25f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
 
@@ -196,10 +196,23 @@ namespace GpuParticlesWithColliders
             m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
             m_shader.SetBuffer(m_csStepKernelId, m_csGridBufferId, m_gridBuffer);
 
-            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csParticleBufferId, m_computeBuffer);
-            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csGridBufferId,m_gridBuffer);
-            m_gridShader.SetInt(m_csNumParticlesId, kNumParticles);
+
+
             // You'll need to set buffer for all kernels (Init kernel does not need grid though)
+            m_gridShader.SetInt(m_csNumParticlesId, kNumParticles);
+            m_gridShader.SetVector(m_gsLowCornerId, m_gridLowCorner);
+            m_gridShader.SetVector(m_gsHighCornerId, m_gridHighCorner);
+            m_gridShader.SetFloat(m_gsGridSizeId, minParticleScale);
+            m_gridShader.SetInts(m_gsGridDimensionId, m_gridDimension);
+
+            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.SetBuffer(m_gsLoadGridKernelId, m_csGridBufferId, m_gridBuffer);
+            m_gridShader.SetBuffer(m_gsInitParIndexKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.SetBuffer(m_gsAssignGridKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_gridShader.SetBuffer(m_gsAssignGridKernelId, m_csGridBufferId, m_gridBuffer);
+
+
+
         }
 
 
@@ -262,6 +275,8 @@ namespace GpuParticlesWithColliders
             // Pass those into GPU
             m_shader.SetVectorArray(m_csASphereId, aSphere);
             m_shader.SetVectorArray(m_csASphereVelId, cSphereVel);
+            m_shader.SetBuffer(m_csStepKernelId, m_csParticleBufferId, m_computeBuffer);
+            m_shader.SetBuffer(m_csStepKernelId, m_csGridBufferId, m_gridBuffer);
             m_shader.Dispatch(m_csStepKernelId, kNumParticles, 1, 1);
         }
 
@@ -284,15 +299,15 @@ namespace GpuParticlesWithColliders
             //
             // For Debug
             //
-            /*uint[] res;
-            res = new uint[64*64*64 * 4];
+            //uint[] res;
+            //res = new uint[64*64*64 * 4];
             //res = new uint[40*40*40 * 4];
-            m_gridBuffer.GetData(res);
+            //m_gridBuffer.GetData(res);
 
-            uint sum = 0;
-            for (int i = 0; i < 64 * 64 * 64 * 4; ++i)
-                sum += res[i];
-            Debug.Log(res[234]);*/
+            //uint sum = 0;
+            //for (int i = 0; i < 64 * 64 * 64 * 4; ++i)
+            //    sum += res[i];
+            //Debug.Log(res[0]);
             //Debug.Log(sum - 64*64*64*4*1200);
 
         }
