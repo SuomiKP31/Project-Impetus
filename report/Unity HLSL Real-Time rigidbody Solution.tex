@@ -93,6 +93,15 @@ This part describes how to find attributes needed to resolve sphere-sphere colli
 \quad \\
 The collision normal is obviously, the normal of the plane. The penetration distance can also be easily calculated if we know the distance from the sphere to the plane. Because we represent planes $in Ax+By+Cz+D = 0$ form, the distance can be directly obtained by substitute the position of the sphere in the equation.
 \subsection{Inter-Particle Collision Detection}
+Since there are hundreds of particles in the scene, it is impossible to traverse through each particle to calculate inter-particle collision velocity. This is some kind like calculate pixel intensity when it comes to ray tracing rendering. Thus, we use the same basic method as ray tracing: Grid. 
+\begin{enumerate}
+	\item [1.] Calculate the dimension of grid structure according to the particle numbers and active region size in the scene. The basic idea is that at most 4 particles will be in 1 grid in 1 frame. Use a one-dimensional array to store the grid structure. Every grid needs to hold 4 variables that store the particle index indicating which particles are in it.
+	\item [2.] For each frame, first in GPU we reset all the variables in the grid array to particle numbers, meaning that all grids don't contain any particle. 
+	\item [3.] Then in the GPU, we traverse every particle, calculate which grid they should be in, and judge the four variables in the grid. Store the particle index in first slot that is not occupied yet. This is better done with atomic operation. We use interlock while writing into the grids.
+	\item [4.] Next, in GPU, after we calculate particle collision situation with planes and control sphere, traverse the neighbor and self grid of each particle(27 grids in all) to calculate the inter-particle collision. calculate sphere vs sphere collision if there is any particles in those grids. Finally, update the particles' position and velocity.
+\end{enumerate}
+
+
 \pagebreak
 \quad \\
 
