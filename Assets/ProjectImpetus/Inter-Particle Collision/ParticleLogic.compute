@@ -87,17 +87,17 @@ void Step(uint3 id : SV_DispatchThreadID)
 
 	// sphere
     float3 velRel = vel - aSphereVel[0].xyz;
-    res = sphereVsSphereAngular(float4(pos, r), aSphere[0], velRel, ang, dynamics.y, dynamics.z);
+    res = sphereVsSphere(float4(pos, r), aSphere[0], velRel, dynamics.y, dynamics.z);
     pos = res.position;
     vel = res.velocity + aSphereVel[0].xyz;
-	ang = res.angularVelocity;
+	//ang = res.angularVelocity;
 
 	// collision with all planes
 	for (int i = 0; i < 6; i++) {
-		res = sphereVsPlaneAngular(float4(pos, r), plane[i], vel, ang, dynamics.y, dynamics.z);
+		res = sphereVsPlane(float4(pos, r), plane[i], vel, dynamics.y, dynamics.z);
 		pos = res.position;
 		vel = res.velocity;
-		ang = res.angularVelocity;
+		//ang = res.angularVelocity;
 	}
 
 	// TODO: collision with surrounding grids
@@ -112,6 +112,10 @@ void Step(uint3 id : SV_DispatchThreadID)
 				grid_x = particleBuffer[id.x].gridIndex.x - 1 + i;
 				grid_y = particleBuffer[id.x].gridIndex.y - 1 + j;
 				grid_z = particleBuffer[id.x].gridIndex.z - 1 + k ;
+
+				if (grid_x >= 64 || grid_y >= 64 || grid_z >= 64 || grid_x < 0 || grid_y < 0 || grid_z < 0)
+					continue;
+
 				grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
 
 				for (int p = 0; p < 4; p++) {
@@ -122,10 +126,14 @@ void Step(uint3 id : SV_DispatchThreadID)
 					if (coll_idx == numParticles) break; // no more particle in the grid
 
 					float3 velRel = vel - particleBuffer[coll_idx].linearVelocity;
-					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.1f), velRel, dynamics.y, dynamics.z);
+					//if (length(velRel) < 0.3)
+					//	velRel = (0, 0, 0);
+					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.5f * particleBuffer[coll_idx].scale), velRel, dynamics.y, dynamics.z);
 					// ????
-					//pos = res.position;
+					pos = res.position;
 					vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
+					//vel = particleBuffer[coll_idx].linearVelocity;
+					//vel /= 2.0f;
 					//ang = res.angularVelocity;
 
 				}
@@ -136,6 +144,36 @@ void Step(uint3 id : SV_DispatchThreadID)
 		
 	// Integrate
 	pos += vel * time.y;
+	if (pos.x >= gridHighCorner.x) {
+		pos.x = gridHighCorner.x;
+		vel = 0;
+	}
+
+	if (pos.y >= gridHighCorner.y) {
+		pos.y = gridHighCorner.y;
+		vel = 0;
+	}
+
+	if (pos.z >= gridHighCorner.z) {
+		pos.z = gridHighCorner.z;
+		vel = 0;
+	}
+
+	if (pos.x <= gridLowCorner.x) {
+		pos.x = gridLowCorner.x;
+		vel = 0;
+	}
+
+	if (pos.y <= gridLowCorner.y) {
+		pos.y = gridLowCorner.y;
+		vel = 0;
+	}
+
+	if (pos.z <= gridLowCorner.z) {
+		pos.z = gridLowCorner.z;
+		vel = 0;
+	}
+
 //--------------------------------------- END OF TODO PART --------------------
   // angular speed damping(damp the angle)
   float4 dampedAngularSpeed = quat_damp(ang,damping); // Do not direct multiply!
