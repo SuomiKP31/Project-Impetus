@@ -122,9 +122,9 @@ void Step(uint3 id : SV_DispatchThreadID)
 					if (coll_idx == numParticles) break; // no more particle in the grid
 
 					float3 velRel = vel - particleBuffer[coll_idx].linearVelocity;
-					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.1f), velRel, dynamics.y, dynamics.z);
+					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.5f * particleBuffer[coll_idx].scale), velRel, dynamics.y, dynamics.z);
 					// ????
-					//pos = res.position;
+					pos = res.position;
 					vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
 					//ang = res.angularVelocity;
 
