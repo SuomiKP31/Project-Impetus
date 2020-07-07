@@ -87,55 +87,73 @@ void Step(uint3 id : SV_DispatchThreadID)
 
 	// sphere
     float3 velRel = vel - aSphereVel[0].xyz;
-    res = sphereVsSphereAngular(float4(pos, r), aSphere[0], velRel, ang, dynamics.y, dynamics.z);
+    res = sphereVsSphere(float4(pos, r), aSphere[0], velRel, dynamics.y, dynamics.z);
     pos = res.position;
     vel = res.velocity + aSphereVel[0].xyz;
-	ang = res.angularVelocity;
+	//ang = res.angularVelocity;
 
 	// collision with all planes
 	for (int i = 0; i < 6; i++) {
-		res = sphereVsPlaneAngular(float4(pos, r), plane[i], vel, ang, dynamics.y, dynamics.z);
+		res = sphereVsPlane(float4(pos, r), plane[i], vel, dynamics.y, dynamics.z);
 		pos = res.position;
 		vel = res.velocity;
-		ang = res.angularVelocity;
+		//ang = res.angularVelocity;
 	}
 
 	// TODO: collision with surrounding grids
 	uint grid_x, grid_y, grid_z, grid_idx, coll_idx;
 
 	// traverse its 26 neighbours and the grid contains itself
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			for (int k = 0; k < 3; k++) {
+	//for (int i = 0; i < 3; i++) {
+	//	for (int j = 0; j < 3; j++) {
+	//		for (int k = 0; k < 3; k++) {
 
-				// get grid index
-				grid_x = particleBuffer[id.x].gridIndex.x - 1 + i;
-				grid_y = particleBuffer[id.x].gridIndex.y - 1 + j;
-				grid_z = particleBuffer[id.x].gridIndex.z - 1 + k ;
-				grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
+	//			// get grid index
+	//			grid_x = particleBuffer[id.x].gridIndex.x - 1 + i;
+	//			grid_y = particleBuffer[id.x].gridIndex.y - 1 + j;
+	//			grid_z = particleBuffer[id.x].gridIndex.z - 1 + k ;
+	//			grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
 
-				for (int p = 0; p < 4; p++) {
-					
-					coll_idx = gridBuffer[grid_idx].PbIndex[p];
+	//			for (int p = 0; p < 4; p++) {
+	//				
+	//				coll_idx = gridBuffer[grid_idx].PbIndex[p];
 
-					if (coll_idx == id.x) continue; // if collide with itself, continue
-					if (coll_idx == numParticles) break; // no more particle in the grid
+	//				if (coll_idx == id.x) continue; // if collide with itself, continue
+	//				if (coll_idx == numParticles) break; // no more particle in the grid
 
-					float3 velRel = vel - particleBuffer[coll_idx].linearVelocity;
-					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.5f * particleBuffer[coll_idx].scale), velRel, dynamics.y, dynamics.z);
-					// ????
-					pos = res.position;
-					vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
-					//ang = res.angularVelocity;
+	//				float3 velRel = vel - particleBuffer[coll_idx].linearVelocity;
+	//				res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.5f * particleBuffer[coll_idx].scale), velRel, dynamics.y, dynamics.z);
+	//				// ????
+	//				pos = res.position;
+	//				vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
+	//				//vel /= 2.0f;
+	//				//ang = res.angularVelocity;
 
-				}
+	//			}
 
-			}
-		}
-	}
+	//		}
+	//	}
+	//}
 		
 	// Integrate
 	pos += vel * time.y;
+	if (pos.x > gridHighCorner.x)
+		pos.x = gridHighCorner.x;
+
+	if (pos.y > gridHighCorner.y)
+		pos.y = gridHighCorner.y;
+
+	if (pos.z > gridHighCorner.z)
+		pos.z = gridHighCorner.z;
+
+	if (pos.x < gridLowCorner.x)
+		pos.x = gridLowCorner.x;
+
+	if (pos.y < gridLowCorner.y)
+		pos.y = gridLowCorner.y;
+
+	if (pos.z < gridLowCorner.z)
+		pos.z = gridLowCorner.z;
 //--------------------------------------- END OF TODO PART --------------------
   // angular speed damping(damp the angle)
   float4 dampedAngularSpeed = quat_damp(ang,damping); // Do not direct multiply!
