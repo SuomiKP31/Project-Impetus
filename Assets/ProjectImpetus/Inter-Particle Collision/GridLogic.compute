@@ -7,7 +7,7 @@
 RWStructuredBuffer<Particle> particleBuffer;
 RWStructuredBuffer<Grid> gridBuffer;
 
-int numParticles; // index trick
+uint numParticles; // index trick
 float3 gridLowCorner;
 float3 gridHighCorner;
 float gridSize;
@@ -75,7 +75,7 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 	uint grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
 
 	
-	if (gridBuffer[grid_idx].PbIndex[0] == numParticles) {
+	/*if (gridBuffer[grid_idx].PbIndex[0] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[0] = id.x;
 		return;
 	}
@@ -99,6 +99,12 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 	if (gridBuffer[grid_idx].PbIndex[3] == numParticles) {
 		gridBuffer[grid_idx].PbIndex[3] = id.x;
 		return;
+	}*/
+
+	for (int i = 0; i < 4; i++) {
+		uint ret;
+		InterlockedCompareExchange(gridBuffer[grid_idx].PbIndex[i], (uint)numParticles, id.x, ret);	
+		if (ret == (uint)numParticles) break;
 	}
 	
 

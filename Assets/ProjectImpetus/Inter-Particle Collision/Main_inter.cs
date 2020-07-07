@@ -38,9 +38,9 @@ namespace GpuParticlesWithColliders
         // Wall prefab - Invisible wall around the scene. It should be used to constraint the particles, so that they won't go out of our grid box.
         public GameObject m_wallPrefab;
 
-        private const int kNumParticles = 40;
+        private const int kNumParticles = 2000;
         private const float minParticleScale = 0.2f; // Grid edge length should be the diameter of the smallest particle, so that there won't be more than 4 particles in each grid.
-        private const float maxParticleScale = 0.25f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
+        private const float maxParticleScale = 0.2f; // Fortunately, the scale of a standard ball particle is equal to its diameter. So directly use minParticleScale as diameter should cause no problem.
 
         //Constraints and grid related variables
 
@@ -142,7 +142,7 @@ namespace GpuParticlesWithColliders
         {
             if (!isActiveAndEnabled)
                 return;
-            //GenerateGrid(); // Generate grid for next frame
+            GenerateGrid(); // Generate grid for next frame
             UpdateParticles(); // Update position, rotation, etc.
             RenderParticles();
         }
