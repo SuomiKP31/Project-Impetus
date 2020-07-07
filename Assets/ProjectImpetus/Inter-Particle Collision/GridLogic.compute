@@ -103,8 +103,13 @@ void AssignGrid (uint3 id : SV_DispatchThreadID)
 
 	for (int i = 0; i < 4; i++) {
 		uint ret;
-		InterlockedCompareExchange(gridBuffer[grid_idx].PbIndex[i], (uint)numParticles, id.x, ret);	
-		if (ret == (uint)numParticles) break;
+		if (gridBuffer[grid_idx].PbIndex[i] == (uint)numParticles)
+		{
+			InterlockedCompareExchange(gridBuffer[grid_idx].PbIndex[i], (uint)numParticles, id.x, ret);
+			break;
+
+		}
+			
 	}
 	
 

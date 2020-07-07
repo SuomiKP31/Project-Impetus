@@ -85,18 +85,26 @@ void Step(uint3 id : SV_DispatchThreadID)
 //-------------------------------------- TODO PART --------------------------------
   CollisionResult res;
 
+  float3 delta_vel = float3(0, 0, 0);
+  float3 origin_vel = vel;
+
 	// sphere
     float3 velRel = vel - aSphereVel[0].xyz;
     res = sphereVsSphere(float4(pos, r), aSphere[0], velRel, dynamics.y, dynamics.z);
     pos = res.position;
+	delta_vel += res.velocity + aSphereVel[0].xyz - vel;
     vel = res.velocity + aSphereVel[0].xyz;
+	
 	//ang = res.angularVelocity;
 
 	// collision with all planes
 	for (int i = 0; i < 6; i++) {
 		res = sphereVsPlane(float4(pos, r), plane[i], vel, dynamics.y, dynamics.z);
 		pos = res.position;
+		delta_vel += res.velocity - vel;
 		vel = res.velocity;
+		
+		
 		//ang = res.angularVelocity;
 	}
 
@@ -113,8 +121,22 @@ void Step(uint3 id : SV_DispatchThreadID)
 				grid_y = particleBuffer[id.x].gridIndex.y - 1 + j;
 				grid_z = particleBuffer[id.x].gridIndex.z - 1 + k ;
 
-				if (grid_x >= 64 || grid_y >= 64 || grid_z >= 64 || grid_x < 0 || grid_y < 0 || grid_z < 0)
-					continue;
+				/*if (grid_x >= 64 || grid_y >= 64 || grid_z >= 64 || grid_x < 0 || grid_y < 0 || grid_z < 0)
+					continue;*/
+
+				if (grid_x >= 64)
+					grid_x -= 1;
+				if (grid_y >= 64)
+					grid_y -= 1;
+				if (grid_z >= 64)
+					grid_z -= 1;
+				if (grid_x < 0)
+					grid_x += 1;
+				if (grid_y < 0)
+					grid_y += 1;
+				if (grid_z < 0)
+					grid_z += 1;
+
 
 				grid_idx = 64 * 64 * grid_x + 64 * grid_y + grid_z;
 
@@ -131,7 +153,9 @@ void Step(uint3 id : SV_DispatchThreadID)
 					res = sphereVsSphere(float4(pos, r), float4(particleBuffer[coll_idx].position, 0.5f * particleBuffer[coll_idx].scale), velRel, dynamics.y, dynamics.z);
 					// ????
 					pos = res.position;
+					delta_vel += res.velocity + particleBuffer[coll_idx].linearVelocity - vel;
 					vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
+					
 					//vel = particleBuffer[coll_idx].linearVelocity;
 					//vel /= 2.0f;
 					//ang = res.angularVelocity;
@@ -141,37 +165,34 @@ void Step(uint3 id : SV_DispatchThreadID)
 			}
 		}
 	}
-		
+	
+	vel = origin_vel + delta_vel;
+
 	// Integrate
 	pos += vel * time.y;
 	if (pos.x >= gridHighCorner.x) {
-		pos.x = gridHighCorner.x;
-		vel = 0;
+		pos.x = gridHighCorner.x - 0.2f;
+		
 	}
 
 	if (pos.y >= gridHighCorner.y) {
-		pos.y = gridHighCorner.y;
-		vel = 0;
+		pos.y = gridHighCorner.y - 0.2f;
 	}
 
 	if (pos.z >= gridHighCorner.z) {
-		pos.z = gridHighCorner.z;
-		vel = 0;
+		pos.z = gridHighCorner.z - 0.2f;
 	}
 
 	if (pos.x <= gridLowCorner.x) {
-		pos.x = gridLowCorner.x;
-		vel = 0;
+		pos.x = gridLowCorner.x + 0.2f;
 	}
 
 	if (pos.y <= gridLowCorner.y) {
-		pos.y = gridLowCorner.y;
-		vel = 0;
+		pos.y = gridLowCorner.y + 0.2f;
 	}
 
 	if (pos.z <= gridLowCorner.z) {
-		pos.z = gridLowCorner.z;
-		vel = 0;
+		pos.z = gridLowCorner.z + 0.2f;
 	}
 
 //--------------------------------------- END OF TODO PART --------------------
