@@ -167,11 +167,11 @@ MonoBehaviour:
   m_shader: {fileID: 7200000, guid: 20de3aa05eea58645881e219db7549cb, type: 3}
   m_gridShader: {fileID: 7200000, guid: e563d3339f055044e849268020c3533e, type: 3}
   m_material: {fileID: 2100000, guid: 9a37816f150e5b74eaa1e1562057cfdc, type: 2}
-  m_timeScale: 0
+  m_timeScale: 0.08
   m_gravity: 9.8
-  m_sphereRadius: 0.8
-  m_restitution: 0.3
-  m_friction: 0.7
+  m_sphereRadius: 1
+  m_restitution: 0.35
+  m_friction: 0.5
   m_controlSpherePrefab: {fileID: 7828119654002003673, guid: 1db6b9e958530524f829e9189e950cde,
     type: 3}
   m_floorPrefab: {fileID: 0}
@@ -354,7 +354,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1784806999}
   m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 5, z: -5}
+  m_LocalPosition: {x: 0, y: 5.9, z: -5.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

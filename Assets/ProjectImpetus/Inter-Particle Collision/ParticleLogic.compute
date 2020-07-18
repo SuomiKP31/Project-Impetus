@@ -93,7 +93,7 @@ void Step(uint3 id : SV_DispatchThreadID)
     res = sphereVsSphere(float4(pos, r), aSphere[0], velRel, dynamics.y, dynamics.z);
     pos = res.position;
 	delta_vel += res.velocity + aSphereVel[0].xyz - vel;
-    vel = res.velocity + aSphereVel[0].xyz;
+    //vel = res.velocity + aSphereVel[0].xyz;
 	
 	//ang = res.angularVelocity;
 
@@ -102,9 +102,7 @@ void Step(uint3 id : SV_DispatchThreadID)
 		res = sphereVsPlane(float4(pos, r), plane[i], vel, dynamics.y, dynamics.z);
 		pos = res.position;
 		delta_vel += res.velocity - vel;
-		vel = res.velocity;
-		
-		
+		//vel = res.velocity;
 		//ang = res.angularVelocity;
 	}
 
@@ -154,7 +152,7 @@ void Step(uint3 id : SV_DispatchThreadID)
 					// ????
 					pos = res.position;
 					delta_vel += res.velocity + particleBuffer[coll_idx].linearVelocity - vel;
-					vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
+					//vel = res.velocity + particleBuffer[coll_idx].linearVelocity;
 					
 					//vel = particleBuffer[coll_idx].linearVelocity;
 					//vel /= 2.0f;
@@ -171,8 +169,8 @@ void Step(uint3 id : SV_DispatchThreadID)
 	// Integrate
 	pos += vel * time.y;
 	if (pos.x >= gridHighCorner.x) {
-		pos.x = gridHighCorner.x - 0.2f;
-		
+		pos.x = gridHighCorner.x - 0.2f; // Right
+		//vel += 0.2f *
 	}
 
 	if (pos.y >= gridHighCorner.y) {

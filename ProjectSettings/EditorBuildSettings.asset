@@ -4,4 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 0
+    path: Assets/ProjectImpetus/Inter-Particle Collision/Inter-Particle Collision.unity
+    guid: f34b546f5ce9e2a40855142fd9747c53
+  - enabled: 1
+    path: Assets/ProjectImpetus/Improved GPU Particle/Imp GPU Particles.unity
+    guid: 88e8f09d0b2ce374590a4584d605cc23
+  m_configObjects: {}
