@@ -1,2 +1,2 @@
-# Project Impetus
- Real time rigidbody simulation solution in Unity, based on Unity CJLib
+# CG1(CS171) @ ShanghaiTech
+ Real time particle collision simulation solution in Unity, based on Unity CJLib
